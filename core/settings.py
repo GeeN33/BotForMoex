@@ -25,6 +25,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'django_celery_beat',
+    'django_celery_results',
+    'auth_account',
+    'bund_quoter',
 ]
 
 MIDDLEWARE = [
@@ -68,8 +73,22 @@ DATABASES = {
 }
 
 
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
+redis_host = env('REDIS_HOST', default='redis')
+redis_port = env('REDIS_PORT', default=6379)
+
+
+
+CELERY_BROKER_URL = f"redis://{redis_host}:{redis_port}/0"
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': f"redis://{redis_host}:{redis_port}/1"
+    }
+}
+
+CELERY_CACHE_BACKEND = 'default'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -104,7 +123,21 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+MEDIA_URL = 'media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+STATIC_DIR = os.path.join(BASE_DIR, 'static')
+STATICFILES_DIRS = [STATIC_DIR]
+
+# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8733",]
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+

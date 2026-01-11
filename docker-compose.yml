@@ -1,0 +1,67 @@
+services:
+
+  web_collector:
+    build:
+      context: .
+    container_name: bunds-collector-web
+    restart: always
+    ports:
+      - 8733:8733
+    networks:
+      - pari-scalp-network
+      - internal_network
+    environment:
+      - DEV_DOCKER=1
+
+  celery_beat_collector:
+    build: .
+    container_name: bunds-collector-celery-beat
+    restart: always
+    command: celery -A core beat -l info
+#    command: celery -A core beat -l CRITICAL
+    volumes:
+      - .:/usr/src/app/
+    depends_on:
+      - web_collector
+      - redis
+    networks:
+      - pari-scalp-network
+      - internal_network
+    environment:
+      - DEV_DOCKER=1
+
+  celery_worker_collector:
+    build: .
+    container_name: bunds-collector-celery-worker
+    restart: always
+#    command: celery -A core worker -l CRITICAL -c 10
+    command: celery -A core worker -l info
+    volumes:
+      - .:/usr/src/app/
+    depends_on:
+      - web_collector
+      - redis
+    networks:
+      - pari-scalp-network
+      - internal_network
+    environment:
+      - DEV_DOCKER=1
+
+  redis:
+    image: redis:alpine
+    restart: always
+    container_name: bunds-collector-redis
+    volumes:
+      - redis_data_collector:/bitnami/redis/data
+    networks:
+      - internal_network
+
+
+networks:
+  internal_network:
+    driver: bridge
+  pari-scalp-network:
+    external: true
+
+volumes:
+  redis_data_collector:

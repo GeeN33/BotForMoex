@@ -7,13 +7,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
+DEV_DOCKER = os.getenv('DEV_DOCKER')
 
 SECRET_KEY =  env('SECRET_KEY', default='')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -30,6 +31,9 @@ INSTALLED_APPS = [
     'django_celery_results',
     'auth_account',
     'bund_quoter',
+    'collector_app',
+    'option_quoter',
+    'spread_quoter',
 ]
 
 MIDDLEWARE = [
@@ -65,18 +69,37 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if DEV_DOCKER:
+    DATABASES = {
+        'default': {
+            'ENGINE': str(os.getenv('DB_ENGINE')),
+            'NAME': str(os.getenv('POSTGRES_DB')),
+            'USER': str(os.getenv('POSTGRES_USER')),
+            'PASSWORD': str(os.getenv('POSTGRES_PASSWORD')),
+            'HOST': str(os.getenv('POSTGRES_HOST_DOCKER')),
+            'PORT': os.getenv('POSTGRES_PORT'),
+            'CONN_MAX_AGE': 600,
+        }
     }
-}
+
+    redis_host = env('REDIS_HOST_DOCKER', default='redis')
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': str(os.getenv('DB_ENGINE')),
+            'NAME': str(os.getenv('POSTGRES_DB')),
+            'USER': str(os.getenv('POSTGRES_USER')),
+            'PASSWORD': str(os.getenv('POSTGRES_PASSWORD')),
+            'HOST': str(os.getenv('POSTGRES_HOST')),
+            'PORT': os.getenv('POSTGRES_PORT'),
+            'CONN_MAX_AGE': 600,
+        }
+    }
+
+    redis_host = env('REDIS_HOST', default='redis')
 
 
-redis_host = env('REDIS_HOST', default='redis')
 redis_port = env('REDIS_PORT', default=6379)
-
-
 
 CELERY_BROKER_URL = f"redis://{redis_host}:{redis_port}/0"
 CELERY_RESULT_BACKEND = "django-db"

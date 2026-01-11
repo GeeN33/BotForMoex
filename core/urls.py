@@ -6,6 +6,8 @@ from django.views.generic import RedirectView
 from core import settings
 
 urlpatterns = [
+    path('collector/', include('collector_app.urls')),
+    path('spread/quoter/', include('spread_quoter.urls')),
     path('favicon.ico', RedirectView.as_view(url='static/favicon.ico')),
     path('', RedirectView.as_view(url='admin/')),
     path('admin/', admin.site.urls),
